@@ -1,0 +1,28 @@
+# Tauri
+src-tauri/target/
+src-tauri/WixTools/
+
+# Node
+node_modules/
+dist/
+*.log
+
+# Build outputs
+injected/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tauri
+*.exe
+*.dmg
+*.app
+*.deb
+*.AppImage

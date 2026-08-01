@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onefend</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 380px;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #FAF7FF;
+      color: #1E1B39;
+    }
+
+    .popup {
+      padding: 0;
+    }
+
+    /* Header with gradient accent */
+    .header {
+      background: #FFFFFF;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid rgba(212, 200, 255, 0.4);
+      position: relative;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #6466FF 0%, #25C688 100%);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1E1B39;
+      letter-spacing: -0.3px;
+    }
+
+    /* Status section */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: #FFFFFF;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-pill.active {
+      background: rgba(37, 198, 136, 0.1);
+      color: #25C688;
+      border: 1px solid rgba(37, 198, 136, 0.2);
+    }
+
+    .status-pill.inactive {
+      background: rgba(239, 68, 68, 0.1);
+      color: #EF4444;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-pill.active .status-dot {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(37, 198, 136, 0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(37, 198, 136, 0); }
+    }
+
+    .status-label {
+      font-size: 12px;
+      color: #A5AEB7;
+      font-weight: 500;
+    }
+
+    /* Content area */
+    .content {
+      padding: 16px 24px 20px;
+    }
+
+    .card {
+      background: #FFFFFF;
+      border: 1px solid rgba(212, 200, 255, 0.4);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 16px;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(212, 200, 255, 0.3);
+    }
+
+    .info-row:last-child { border-bottom: none; }
+
+    .info-label {
+      color: #A5AEB7;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .info-label svg { opacity: 0.5; }
+
+    .info-value {
+      color: #1E1B39;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    /* Sync button */
+    .sync-btn {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid rgba(212, 200, 255, 0.5);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #FFFFFF;
+      color: #6466FF;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sync-btn:hover {
+      background: #FAF7FF;
+      border-color: #6466FF;
+    }
+
+    .sync-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 0 24px 16px;
+    }
+
+    .footer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: #A5AEB7;
+      font-weight: 500;
+    }
+
+    /* Not enrolled state */
+    .not-enrolled {
+      display: none;
+      padding: 32px 24px;
+      text-align: center;
+    }
+
+    .not-enrolled-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #F3F0FF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .not-enrolled h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1E1B39;
+      margin-bottom: 6px;
+    }
+
+    .not-enrolled p {
+      font-size: 13px;
+      color: #A5AEB7;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .setup-btn {
+      width: 100%;
+      padding: 11px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #6466FF;
+      color: #FFFFFF;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .setup-btn:hover {
+      background: #5557E0;
+    }
+
+    /* States */
+    .loading {
+      text-align: center;
+      padding: 40px 20px;
+      color: #A5AEB7;
+      font-size: 13px;
+    }
+
+    .error {
+      background: #FEF2F2;
+      color: #DC2626;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 12px;
+      border-left: 3px solid #DC2626;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="popup">
+    <!-- Header -->
+    <div class="header">
+      <div class="brand">
+        <svg width="22" height="22" viewBox="0 0 32 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23.7395 31.2277V54H31.8877V18.2621L7.99512 29.4534V38.3914L23.7395 31.2277Z" fill="#6466FF"/>
+          <path d="M31.8877 0L0 14.1414V23.3076L31.8877 9.16438V0Z" fill="#6466FF"/>
+        </svg>
+        <span class="brand-name">Onefend</span>
+      </div>
+    </div>
+
+    <div id="loading" class="loading">Loading...</div>
+
+    <!-- Not enrolled state -->
+    <div id="not-enrolled" class="not-enrolled">
+      <div class="not-enrolled-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6466FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h3>Setup Required</h3>
+      <p>Complete the enrollment to activate protection on this browser.</p>
+      <button id="setup-btn" class="setup-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Complete Setup
+      </button>
+      <div class="footer" style="margin-top: 16px;">
+        <span class="footer-badge">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Protected by Onefend
+        </span>
+      </div>
+    </div>
+
+    <div id="content" style="display: none;">
+      <div id="error-message" class="error" style="display: none;"></div>
+
+      <!-- Status bar -->
+      <div class="status-bar">
+        <div id="status-badge" class="status-pill active">
+          <span class="status-dot"></span>
+          <span id="status-text">Protected</span>
+        </div>
+        <span id="status-desc" class="status-label">Monitoring active</span>
+      </div>
+
+      <!-- Info card -->
+      <div class="content">
+        <div class="card">
+          <div class="info-row">
+            <span class="info-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Account
+            </span>
+            <span id="user-identifier" class="info-value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Last sync
+            </span>
+            <span id="last-sync" class="info-value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Policies
+            </span>
+            <span id="policy-count" class="info-value">0</span>
+          </div>
+        </div>
+
+        <button id="sync-btn" class="sync-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Sync Now
+        </button>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <span class="footer-badge">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Protected by Onefend
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.ts" type="module"></script>
+</body>
+
+</html>

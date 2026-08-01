@@ -1,0 +1,474 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Settings {
+  id                  String           @id @default("default")
+  name                String           @default("Onefend")
+  enforceMfa          Boolean          @default(false)
+  auditLogRetentionDays Int            @default(90)
+  eventRetentionDays  Int              @default(30)
+  enableRegexBlocking Boolean          @default(true) @map("enable_regex_blocking")
+  interventionMode    InterventionMode @default(BLOCKING) @map("intervention_mode")
+  saveEvidence        Boolean          @default(false) @map("save_evidence")
+  aiRateLimit         Int              @default(1000) @map("ai_rate_limit")
+  aiContextPrompt     String?          @db.Text @map("ai_context_prompt")
+  approvedAiName      String?          @map("approved_ai_name")
+  approvedAiUrl       String?          @map("approved_ai_url")
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@map("settings")
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  identifier         String              @unique
+  password           String?
+  mfaSecret          String?             @map("mfa_secret")
+  isMfaEnabled       Boolean             @default(false) @map("is_mfa_enabled")
+  mfaBackupCodes     String[]            @map("mfa_backup_codes")
+  role               UserRole            @default(USER)
+  isActive           Boolean             @default(true)
+  mustChangePassword Boolean             @default(false) @map("must_change_password")
+  resetPasswordToken String?             @map("reset_password_token")
+  resetPasswordExpires DateTime?         @map("reset_password_expires")
+  lastSeenAt         DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  conversationEvents ConversationEvent[]
+  devices            Device[]
+  events             Event[]
+  alertConfigs       AlertConfig[]
+  systemAuditLogs    SystemAuditLog[]
+  groupMembers       GroupMember[]
+  reportSchedules    ReportSchedule[]
+
+  @@map("users")
+}
+
+model Device {
+  id                 String              @id @default(cuid())
+  userId             String              @map("user_id")
+  deviceType         DeviceType          @default(EXTENSION) @map("device_type")
+  deviceInfo         Json
+  extensionVersion   String?             @map("extension_version")
+  jwtTokenHash       String?             @map("jwt_token_hash")
+  enrollmentToken    String?             @map("enrollment_token")
+  isActive           Boolean             @default(true)
+  lastSyncAt         DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  revokedAt          DateTime?           @map("revoked_at")
+  revokedBy          String?             @map("revoked_by")
+  conversationEvents ConversationEvent[]
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("devices")
+}
+
+model Application {
+  id                 String              @id @default(cuid())
+  domain             String              @unique
+  name               String?
+  category           ApplicationCategory @default(UNKNOWN)
+  aiDescription      String?             @db.Text @map("ai_description")
+  riskScore          Int                 @default(50)
+  isKnown            Boolean             @default(false)
+  isBlocked          Boolean             @default(false)
+  metadata           Json?               @default("{}")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  conversationEvents ConversationEvent[]
+  events             Event[]
+  policies           Policy[]
+
+  @@index([domain])
+  @@map("applications")
+}
+
+model Group {
+  id                String                  @id @default(cuid())
+  name              String                  @unique
+  description       String?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  members           GroupMember[]
+  policyAssignments PolicyGroupAssignment[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  id        String   @id @default(cuid())
+  groupId   String   @map("group_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now())
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+  @@map("group_members")
+}
+
+model Policy {
+  id            String                  @id @default(cuid())
+  applicationId String                  @unique @map("application_id")
+  action        PolicyAction            @default(ALLOW)
+  priority      Int                     @default(0)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  application   Application             @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  policyGroups  PolicyGroupAssignment[]
+
+  @@index([applicationId])
+  @@map("policies")
+}
+
+model PolicyGroupAssignment {
+  id        String   @id @default(cuid())
+  policyId  String   @map("policy_id")
+  groupId   String   @map("group_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  policy    Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@unique([policyId, groupId])
+  @@index([policyId])
+  @@index([groupId])
+  @@map("policy_group_assignments")
+}
+
+model Event {
+  id            String      @id @default(cuid())
+  userId        String      @map("user_id")
+  applicationId String      @map("application_id")
+  action        String
+  url           String?
+  metadata      Json?       @default("{}")
+  timestamp     DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([applicationId])
+  @@index([timestamp])
+  @@map("events")
+}
+
+model EnrollmentToken {
+  id         String      @id @default(cuid())
+  token      String      @unique
+  name       String?
+  maxUses    Int?        @map("max_uses")
+  usedCount  Int         @default(0) @map("used_count")
+  expiresAt  DateTime?   @map("expires_at")
+  isActive   Boolean     @default(true) @map("is_active")
+  createdBy  String?     @map("created_by")
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  invitation Invitation?
+
+  @@index([token])
+  @@map("enrollment_tokens")
+}
+
+model Invitation {
+  id                String           @id @default(cuid())
+  email             String           @unique
+  enrollmentTokenId String           @unique @map("enrollment_token_id")
+  status            InvitationStatus @default(PENDING)
+  sentAt            DateTime         @default(now()) @map("sent_at")
+  installedAt       DateTime?        @map("installed_at")
+  revokedAt         DateTime?        @map("revoked_at")
+  revokedBy         String?          @map("revoked_by")
+  createdBy         String           @map("created_by")
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  enrollmentToken   EnrollmentToken  @relation(fields: [enrollmentTokenId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@map("invitations")
+}
+
+model SensitiveDataPattern {
+  id                   String       @id @default(cuid())
+  name                 String       @unique
+  category             DataCategory
+  pattern              String?
+  description          String?
+  defaultAction        PolicyAction @default(LOG)
+  severity             RiskLevel    @default(MEDIUM)
+  allowOverride        Boolean      @default(false)
+  requireJustification Boolean      @default(false)
+  enabled              Boolean      @default(true)
+  caseSensitive        Boolean      @default(false) @map("case_sensitive")
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  @@index([enabled])
+  @@index([category])
+  @@map("sensitive_data_patterns")
+}
+
+model ConversationEvent {
+  id                    String       @id @default(cuid())
+  userId                String       @map("user_id")
+  deviceId              String       @map("device_id")
+  applicationId         String?      @map("application_id")
+  platform              String
+  conversationId        String?      @map("conversation_id")
+  messageCount          Int          @default(1) @map("message_count")
+  sensitiveDataDetected Boolean      @default(false) @map("sensitive_data_detected")
+  dataTypes             Json         @map("data_types")
+  riskLevel             RiskLevel    @map("risk_level")
+  action                PolicyAction
+  userOverride          Boolean      @default(false) @map("user_override")
+  justification         String?
+  inputLength           Int          @map("input_length")
+  patternMatches        Json         @map("pattern_matches")
+  analysisSource        String       @map("analysis_source")
+  confidence            Float        @default(0.0)
+  aiCategory            String?      @map("ai_category")
+  aiRiskLevel           RiskLevel?   @map("ai_risk_level")
+  aiSummary             String?      @map("ai_summary")
+  evidence              String?      @map("evidence")
+  timestamp             DateTime     @default(now())
+  application           Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  device                Device       @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([timestamp(sort: Desc)], name: "idx_timestamp")
+  @@index([riskLevel, action])
+  @@index([platform])
+  @@index([dataTypes], type: Gin)
+  @@index([patternMatches], type: Gin)
+  @@map("conversation_events")
+}
+
+model Integration {
+  id            String          @id @default(cuid())
+  name          String
+  type          IntegrationType
+  config        Json
+  webhookUrl    String?         @map("webhook_url")
+  webhookEvents Json?           @map("webhook_events")
+  isActive      Boolean         @default(true) @map("is_active")
+  lastSyncAt    DateTime?       @map("last_sync_at")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([isActive])
+  @@map("integrations")
+}
+
+model PlatformConfig {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  domains     String[]
+  category    PlatformCategory
+  selectors   Json
+  features    Json             @default("{}")
+  isActive    Boolean          @default(true) @map("is_active")
+  isOfficial  Boolean          @default(false) @map("is_official")
+  description String?
+  iconUrl     String?          @map("icon_url")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@index([category])
+  @@index([isOfficial])
+  @@map("platform_configs")
+}
+
+model DetectionPattern {
+  id                String       @id @default(cuid())
+  name              String
+  category          String
+  description       String?
+  regex             String
+  caseSensitive     Boolean      @default(false) @map("case_sensitive")
+  multiline         Boolean      @default(false)
+  severity          RiskLevel    @default(MEDIUM)
+  defaultAction     PolicyAction @default(WARN) @map("default_action")
+  isActive          Boolean      @default(true) @map("is_active")
+  isBuiltIn         Boolean      @default(false) @map("is_built_in")
+  createdBy         String?      @map("created_by")
+  totalDetections   Int          @default(0) @map("total_detections")
+  lastDetectedAt    DateTime?    @map("last_detected_at")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@index([isActive])
+  @@map("detection_patterns")
+}
+
+model SystemAuditLog {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  action       String
+  resourceId   String?  @map("resource_id")
+  resourceType String?  @map("resource_type")
+  details      Json?
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  timestamp    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([timestamp])
+  @@index([action])
+  @@map("system_audit_logs")
+}
+
+model AlertConfig {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  name        String
+  triggerType String
+  threshold   Int?
+  channel     String
+  destination String
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("alert_configs")
+}
+
+model ReportSchedule {
+  id         String          @id @default(cuid())
+  userId     String          @map("user_id")
+  frequency  ReportFrequency
+  recipients String[]
+  runTime    String          @default("00:00") @map("run_time")
+  nextRunAt  DateTime?       @map("next_run_at")
+  lastRunAt  DateTime?       @map("last_run_at")
+  isActive   Boolean         @default(true) @map("is_active")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("report_schedules")
+}
+
+model ExcludedDomain {
+  id        String   @id @default(cuid())
+  domain    String   @unique
+  reason    String?
+  createdBy String?  @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("excluded_domains")
+}
+
+// Enums
+
+enum UserRole {
+  ADMIN
+  ANALYST
+  VIEWER
+  AUDITOR
+  USER
+}
+
+enum ApplicationCategory {
+  AI_ASSISTANT
+  PRODUCTIVITY
+  CLOUD_STORAGE
+  COMMUNICATION
+  DEVELOPMENT
+  SOCIAL_MEDIA
+  UNKNOWN
+}
+
+enum PolicyAction {
+  ALLOW
+  WARN
+  SOFT_BLOCK
+  BLOCK
+  LOG
+  REDACTED_SEND
+  USER_OVERRIDE
+  USER_OVERRIDE_BLOCKED
+  EDIT
+  CLEAR_TEXT
+  WARNED_PROCEED
+  ALLOWED
+}
+
+enum DataCategory {
+  PII
+  PHI
+  FINANCIAL
+  CREDENTIALS
+  INTELLECTUAL_PROPERTY
+  NETWORK
+  CUSTOM
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IntegrationType {
+  WEBHOOK
+  SYSLOG
+  SIEM
+  DLP
+}
+
+enum DeviceType {
+  EXTENSION
+  DESKTOP_AGENT
+}
+
+enum InvitationStatus {
+  PENDING
+  INSTALLED
+  REVOKED
+  EXPIRED
+}
+
+enum PlatformCategory {
+  AI_CHAT
+  CODE_ASSISTANT
+  PRODUCTIVITY
+  DESIGN
+  DATA_ANALYTICS
+  CRM
+  DOCUMENT
+  SPECIALIZED
+  COLLABORATION
+  TRANSLATION
+  IMAGE_GENERATION
+  AUDIO_VIDEO
+  RESEARCH
+  OTHER
+}
+
+enum ReportFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum InterventionMode {
+  BLOCKING
+  OBSERVATION
+}

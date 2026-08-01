@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onefend — Setup</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #FAF7FF;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #FFFFFF;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(100, 102, 255, 0.06);
+            max-width: 480px;
+            width: 100%;
+            border: 1px solid rgba(212, 200, 255, 0.5);
+            overflow: hidden;
+        }
+
+        /* Gradient accent bar */
+        .accent-bar {
+            height: 3px;
+            background: linear-gradient(90deg, #6466FF 0%, #25C688 100%);
+        }
+
+        .inner {
+            padding: 40px 36px;
+        }
+
+        /* Logo */
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1E1B39;
+            letter-spacing: -0.3px;
+        }
+
+        /* Steps */
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            background: #F3F0FF;
+            color: #A5AEB7;
+            border: 1.5px solid rgba(212, 200, 255, 0.5);
+            transition: all 0.3s;
+        }
+
+        .step.active .step-dot {
+            background: #6466FF;
+            border-color: #6466FF;
+            color: #FFFFFF;
+        }
+
+        .step.completed .step-dot {
+            background: #25C688;
+            border-color: #25C688;
+            color: #FFFFFF;
+        }
+
+        .step-line {
+            width: 40px;
+            height: 2px;
+            background: rgba(212, 200, 255, 0.5);
+            border-radius: 1px;
+        }
+
+        /* Title */
+        .title {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .title h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1E1B39;
+            margin-bottom: 6px;
+        }
+
+        .title p {
+            font-size: 13px;
+            color: #A5AEB7;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1E1B39;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid rgba(212, 200, 255, 0.5);
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1E1B39;
+            background: #FAFAFE;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #6466FF;
+            box-shadow: 0 0 0 3px rgba(100, 102, 255, 0.08);
+            background: #FFFFFF;
+        }
+
+        .form-help {
+            font-size: 12px;
+            color: #A5AEB7;
+            margin-top: 5px;
+        }
+
+        /* Button */
+        .submit-btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #6466FF;
+            color: #FFFFFF;
+            margin-top: 4px;
+        }
+
+        .submit-btn:hover { background: #5557E0; }
+        .submit-btn:active { transform: scale(0.98); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        /* Alerts */
+        .error {
+            background: #FEF2F2;
+            color: #DC2626;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            border-left: 3px solid #DC2626;
+            display: none;
+        }
+
+        .success {
+            background: #F0FDF4;
+            color: #25C688;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            border-left: 3px solid #25C688;
+            display: none;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .spinner {
+            border: 3px solid #F3F0FF;
+            border-top: 3px solid #6466FF;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 14px;
+        }
+
+        .loading p {
+            color: #A5AEB7;
+            font-size: 13px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(212, 200, 255, 0.4);
+        }
+
+        .footer-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            color: #A5AEB7;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="accent-bar"></div>
+        <div class="inner">
+            <!-- Logo -->
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 32 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M23.7395 31.2277V54H31.8877V18.2621L7.99512 29.4534V38.3914L23.7395 31.2277Z" fill="#6466FF"/>
+                    <path d="M31.8877 0L0 14.1414V23.3076L31.8877 9.16438V0Z" fill="#6466FF"/>
+                </svg>
+                <span class="logo-text">Onefend</span>
+            </div>
+
+            <!-- Steps indicator -->
+            <div class="steps">
+                <div class="step active">
+                    <div class="step-dot">1</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step">
+                    <div class="step-dot">2</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step">
+                    <div class="step-dot">3</div>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <div class="title">
+                <h2>Complete your setup</h2>
+                <p>Enter your enrollment details to activate protection</p>
+            </div>
+
+            <div id="error-message" class="error"></div>
+            <div id="success-message" class="success"></div>
+
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Activating protection...</p>
+            </div>
+
+            <form id="registration-form">
+                <div class="form-group">
+                    <label class="form-label" for="enrollment-token">Enrollment Token</label>
+                    <input type="text" id="enrollment-token" class="form-input" placeholder="enroll_xxxxxxxxxxxxxxxx" required />
+                    <p class="form-help">Provided by your IT administrator or in your invitation email</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="identifier">Your Email</label>
+                    <input type="text" id="identifier" class="form-input" placeholder="you@company.com" required />
+                    <p class="form-help">Use the same email where you received the invitation</p>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submit-btn">Activate Onefend</button>
+            </form>
+
+            <div class="footer">
+                <span class="footer-badge">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Protected by Onefend
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <script src="onboarding.ts" type="module"></script>
+</body>
+
+</html>
